@@ -1,0 +1,70 @@
+[[events]]
+title = "This is event A"
+body = "Something happens"
+date = "2020-05-24 15:23"
+
+[[events]]
+uid = "event-B"
+title = "This is event B"
+body = "Something else happens"
+from = "2020-05-23"
+until = "2020-05-28"
+
+[[events]]
+uid = "event-C"
+title = "This is event C"
+body = "Yet another thing happens"
+from = "2020-06-14"
+
+[[events]]
+uid = "event-D"
+title = "This is event D"
+body = "This one happens somewhere between the end of B and the start of C"
+from.after.end-of = "event-B"
+
+[[events]]
+title = "This is event E"
+body = "also during B but after A"
+from = "2020-05-25"
+
+[[events]]
+title = "This is event F"
+body = "This happens between the end of B and start of D, ooh scary"
+from.before = "event-D"
+
+[[events]]
+title = "This is event G"
+body = "This one happens at the same time as D"
+from.after = "event-B"
+
+# this config results in the following EventTimestamps
+#
+# start B
+# start A
+# end   A
+# end   B
+# start E
+# end   E
+# end   B
+# start F
+# end   F
+# start D
+# start G
+# end   D
+# end   G
+# start C
+# end   C
+
+# which produces a timeline that looks something like this
+#
+# B
+# B A
+# B
+# B E
+# B
+#
+# F
+#
+# D G
+#
+# C
