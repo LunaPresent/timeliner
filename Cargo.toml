@@ -1,0 +1,5 @@
+[package]
+name = "timeliner"
+version = "0.1.0"
+edition = "2024"
+description = "Create a topological timeline from a list of dated and ordered events"
