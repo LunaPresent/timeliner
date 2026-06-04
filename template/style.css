@@ -1,0 +1,227 @@
+/*
+ * Timeline renderer styles — Catppuccin Mocha.
+ *
+ * Everything is scoped under .tmln-root so the timeline can be embedded into an
+ * arbitrary page without leaking styles in either direction. All custom
+ * properties are declared on .tmln-root rather than :root for the same reason.
+ */
+
+.tmln-root {
+	/* Catppuccin Mocha palette */
+	--tmln-base: #1e1e2e;
+	--tmln-mantle: #181825;
+	--tmln-crust: #11111b;
+	--tmln-surface0: #313244;
+	--tmln-surface1: #45475a;
+	--tmln-surface2: #585b70;
+	--tmln-overlay0: #6c7086;
+	--tmln-overlay1: #7f849c;
+	--tmln-text: #cdd6f4;
+	--tmln-subtext0: #a6adc8;
+	--tmln-subtext1: #bac2de;
+	--tmln-blue: #89b4fa;
+	--tmln-lavender: #b4befe;
+	--tmln-mauve: #cba6f7;
+	--tmln-pink: #f5c2e7;
+	--tmln-red: #f38ba8;
+	--tmln-peach: #fab387;
+	--tmln-yellow: #f9e2af;
+	--tmln-green: #a6e3a1;
+	--tmln-teal: #94e2d5;
+	--tmln-sky: #89dceb;
+
+	/* Layout knobs */
+	--tmln-gutter: 9rem;
+	--tmln-lane-max: 22rem;
+	--tmln-lane: minmax(8rem, var(--tmln-lane-max));
+	--tmln-row-min: 2.25rem;
+	--tmln-gap: 0.5rem;
+	--tmln-spine-width: 2px;
+	--tmln-accent: var(--tmln-mauve);
+
+	box-sizing: border-box;
+	display: block;
+	margin: 0;
+	padding: 1.5rem;
+	background: var(--tmln-base);
+	color: var(--tmln-text);
+	font-family:
+		ui-sans-serif,
+		system-ui,
+		-apple-system,
+		"Segoe UI",
+		Roboto,
+		Helvetica,
+		Arial,
+		sans-serif;
+	font-size: 16px;
+	line-height: 1.45;
+	-webkit-font-smoothing: antialiased;
+}
+
+.tmln-root *,
+.tmln-root *::before,
+.tmln-root *::after {
+	box-sizing: border-box;
+}
+
+/*
+ * Standalone-only page background.
+ *
+ * The renderer emits the timeline as a direct child of <body> when it bundles a
+ * full document. This selector matches only that exact shape, so an embedding
+ * page (where .tmln-root is nested deeper) is never affected. The colour is the
+ * Catppuccin Mocha base, hardcoded here because --tmln-base lives on .tmln-root
+ * and custom properties do not cascade up to ancestor elements.
+ */
+html:has(> body > .tmln-root) {
+	background: #1e1e2e;
+}
+
+.tmln-empty {
+	margin: 0;
+	color: var(--tmln-subtext0);
+	font-style: italic;
+}
+
+/*
+ * The grid. Column 1 is the date gutter (and hosts the spine via a child).
+ * Columns 2..(2 + --tmln-cols) are the event swimlanes.
+ *
+ * Rows are placed explicitly by line number from the renderer, one row line per
+ * chronology timestamp. The layout is purely topological: every row is the same
+ * minimum height regardless of how much real time elapsed, and only the number
+ * of concurrent lanes can widen the timeline.
+ */
+.tmln-grid {
+	position: relative;
+	display: grid;
+	grid-template-columns:
+		[tmln-gutter] var(--tmln-gutter)
+		repeat(var(--tmln-cols, 1), [tmln-lane] var(--tmln-lane));
+	grid-auto-rows: minmax(var(--tmln-row-min), auto);
+	column-gap: var(--tmln-gap);
+	align-items: stretch;
+	/*
+	 * Size the grid to exactly its (capped) tracks rather than stretching the
+	 * lanes to fill the viewport — this keeps event blocks a consistent, readable
+	 * width regardless of how many swimlanes exist. The grid box is then centered
+	 * horizontally, while its tracks (gutter, spine, dates) stay left-anchored
+	 * within it. max-width keeps it from overflowing narrow screens, where lanes
+	 * fall back toward their min width.
+	 */
+	width: max-content;
+	max-width: 100%;
+	margin-inline: auto;
+}
+
+/* The vertical spine between gutter and lanes. */
+.tmln-spine {
+	grid-column: 1;
+	justify-self: end;
+	width: var(--tmln-spine-width);
+	margin-right: calc(var(--tmln-gap) / -2 - var(--tmln-spine-width) / 2);
+	background: linear-gradient(
+		to bottom,
+		var(--tmln-surface2),
+		var(--tmln-surface1)
+	);
+	border-radius: var(--tmln-spine-width);
+}
+
+/* A date marker pinned to a single row in the gutter. */
+.tmln-date {
+	grid-column: 1;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 0.5rem;
+	position: relative;
+	padding-right: 0.75rem;
+	min-height: var(--tmln-row-min);
+}
+
+/* The dot where the date meets the spine. */
+.tmln-tick {
+	position: absolute;
+	right: calc(var(--tmln-gap) / -2 - var(--tmln-spine-width) / 2);
+	top: 50%;
+	width: 0.6rem;
+	height: 0.6rem;
+	transform: translate(50%, -50%);
+	border-radius: 50%;
+	background: var(--tmln-accent);
+	box-shadow: 0 0 0 3px var(--tmln-base);
+}
+
+.tmln-date-label {
+	font-size: 0.8rem;
+	font-variant-numeric: tabular-nums;
+	letter-spacing: 0.01em;
+	color: var(--tmln-subtext1);
+	text-align: right;
+	white-space: nowrap;
+}
+
+/* An event block, spanning its rows and sitting in one swimlane. */
+.tmln-event {
+	margin: 0.15rem 0;
+	padding: 0.5rem 0.75rem;
+	min-width: 0;
+	background: var(--tmln-surface0);
+	border: 1px solid var(--tmln-surface1);
+	border-left: 3px solid var(--tmln-accent);
+	border-radius: 0.5rem;
+	overflow: hidden;
+	transition:
+		background-color 120ms ease,
+		border-color 120ms ease,
+		transform 120ms ease;
+}
+
+/* Optional, allowed flourish: gently lift a block on hover. */
+.tmln-event:hover {
+	background: var(--tmln-surface1);
+	border-color: var(--tmln-surface2);
+	border-left-color: var(--tmln-lavender);
+	transform: translateY(-1px);
+}
+
+/* Span events fill their vertical extent so duration reads at a glance. */
+.tmln-event--span {
+	border-left-color: var(--tmln-blue);
+}
+
+.tmln-event--span:hover {
+	border-left-color: var(--tmln-sky);
+}
+
+/* Instant events occupy a single row; tint them differently. */
+.tmln-event--instant {
+	border-left-color: var(--tmln-peach);
+}
+
+.tmln-event--instant:hover {
+	border-left-color: var(--tmln-yellow);
+}
+
+.tmln-event-title {
+	margin: 0;
+	font-size: 0.95rem;
+	font-weight: 600;
+	color: var(--tmln-text);
+}
+
+.tmln-event-range {
+	margin: 0.15rem 0 0;
+	font-size: 0.75rem;
+	font-variant-numeric: tabular-nums;
+	color: var(--tmln-overlay1);
+}
+
+.tmln-event-body {
+	margin: 0.35rem 0 0;
+	font-size: 0.85rem;
+	color: var(--tmln-subtext0);
+	white-space: pre-line;
+}

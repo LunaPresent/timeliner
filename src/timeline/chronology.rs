@@ -55,6 +55,26 @@ pub struct EventTimestamp {
 	event_idx: usize,
 }
 
+impl EventTimestamp {
+	pub fn anchor(&self) -> Anchor {
+		self.anchor
+	}
+
+	pub fn date(&self) -> &GenericDate {
+		&self.date
+	}
+
+	pub fn event_idx(&self) -> usize {
+		self.event_idx
+	}
+
+	pub fn is_equivalent(&self, other: &Self) -> bool {
+		return self.date == other.date
+			&& self.relative_sort_key == other.relative_sort_key
+			&& self.anchor == other.anchor;
+	}
+}
+
 pub fn gen_chronology(events: &[Event]) -> Result<Vec<EventTimestamp>, TimelineError> {
 	let mut uid_to_idx: HashMap<&str, usize> = HashMap::new();
 	for (i, e) in events.iter().enumerate() {
@@ -93,19 +113,6 @@ pub fn gen_chronology(events: &[Event]) -> Result<Vec<EventTimestamp>, TimelineE
 	}
 
 	chronology.sort_unstable();
-
-	// TODO: remove printf debugging
-	for et in &chronology {
-		println!(
-			"{} - {}",
-			match et.anchor {
-				Anchor::Start => "start",
-				Anchor::End => "end  ",
-			},
-			events[et.event_idx].title
-		);
-	}
-	// end of printf debugging
 
 	Ok(chronology)
 }
